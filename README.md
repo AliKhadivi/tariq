@@ -28,7 +28,7 @@ docker run -v /usr/local/bin:/install alikhadivi/tariq instl
 cd /opt
 git clone https://github.com/alikhadivi/tariq
 cd tariq
-docker build -t alikhadivi/tariq .
+docker pull alikhadivi/tariq
 ln -snf $PWD/tariq /usr/local/bin/tariq
 ```
 
