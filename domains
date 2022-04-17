@@ -1,0 +1,8 @@
+docker.com
+*.docker.com
+gitlab.com
+*.gitlab.com
+grafana.com
+grafana.org
+*.grafana.org
+*.grafana.com

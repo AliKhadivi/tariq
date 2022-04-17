@@ -1,0 +1,604 @@
+#!/bin/bash
+
+PROG="$(basename $0)"
+PROG_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
+
+typeset -A config
+config=(
+    [dns]='8.8.8.8,8.8.4.4'
+    [iptables]='true'
+    [ipv6nat]='true'
+)
+
+usage() {
+    echo "Usage: $PROG <command>"
+    echo
+    echo "Commands:"
+    echo "  help                            Show this help"
+    echo "  start                           Start Tariq"
+    echo "  stop                            Stop Tariq"
+    echo "  restart                         Restart Tariq"
+    echo "  enable                          Enable Tariq service (i.e. starts on boot)"
+    echo "  disable                         Disable Tariq service"
+    echo "  status                          Check Tariq status"
+    echo "  add-ip                          Add allowed IP"
+    echo "  rm-ip                           Remove allowed IP"
+    echo "  list-ips                        List IPs"
+    echo "  add-ddns                        Add allowed DDNS"
+    echo "  rm-ddns                         Remove allowed DDNS"
+    echo "  list-ddns                       List DDNS"
+    echo "  reload-ddns                     Reload DDNS"
+    echo "  config-get [<option>]           Get value of a config option"
+    echo "  config-set <option> [<value>]   Set value to a config option"
+    echo
+    echo "Config options:"
+    echo "  dns <ip-list>           DNS servers (default: 8.8.8.8,8.8.4.4)"
+    echo "  iptables <true|false>   Set iptables rules (default: true)"
+    echo "  ipv6nat <true|false>    Create IPv6 NAT (default: true)"
+}
+
+load_config() {
+    local line
+    local var
+
+    if [[ -f /etc/tariq/config ]]; then
+        while read line; do
+            if echo "$line" | grep -qE '^[_a-zA-Z][-_a-zA-Z0-9]+='; then
+                var="${line%%=*}"
+                config[$var]="${line#*=}"
+            fi
+        done < /etc/tariq/config
+    fi
+}
+
+save_config() {
+    local var
+    for var in "${!config[@]}"; do
+        echo "${var}=${config[$var]}"
+    done > /etc/tariq/config
+}
+
+is_true() {
+    echo "$1" | grep -qiE '^[[:space:]]*(true|t|yes|y|1)[[:space:]]*$'
+}
+
+echo_err() {
+    echo "$@" >&2
+}
+
+noout() {
+    "$@" > /dev/null 2>&1
+}
+
+is_running() {
+    docker inspect -f '{{.State.Running}}' "$1" 2> /dev/null | grep -qE '^true$'
+}
+
+is_container() {
+    [[ -n "$(docker inspect -f '{{.State.Running}}' "$1" 2> /dev/null)" ]]
+}
+
+is_num() {
+    [[ "$1" =~ ^[0-9]+$ ]]
+}
+
+is_ipv4() {
+    local old_ifs="$IFS"
+    local ip="$(echo "$1" | awk -F / '{ print $1 }')"
+    local mask="$(echo "$1" | awk -F / '{ print $2 }')"
+    local ret=0
+    local x
+
+    if [[ -n "$mask" ]]; then
+        if ! is_num "$mask" || [[ "$mask" -lt 0 || "$mask" -gt 32 ]]; then
+            return 1
+        fi
+    fi
+
+    IFS='.'
+    for x in $ip; do
+        if ! is_num "$x" || [[ "$x" -lt 0 || "$x" -gt 255 ]]; then
+            ret=1
+            break
+        fi
+    done
+    IFS="$old_ifs"
+
+    return $ret
+}
+
+is_ipv6() {
+    local old_ifs="$IFS"
+    local ip="$(echo "$1" | awk -F / '{ print $1 }')"
+    local mask="$(echo "$1" | awk -F / '{ print $2 }')"
+    local ret=0
+    local x
+
+    if [[ -n "$mask" ]]; then
+        if ! is_num "$mask" || [[ "$mask" -lt 0 || "$mask" -gt 128 ]]; then
+            return 1
+        fi
+    fi
+
+    IFS=':'
+    for x in $ip; do
+        if ! echo "$x" | grep -qE '^[a-fA-F0-9]{0,4}$'; then
+            ret=1
+            break
+        fi
+    done
+    IFS="$old_ifs"
+
+    return $ret
+}
+
+ipv6_iface() {
+    ip -6 route | grep '^default' | sed 's/.*dev[[:space:]]\+\([^[:space:]]\+\).*/\1/'
+}
+
+has_global_ipv6() {
+    local x
+
+    for x in $(ipv6_iface); do
+        if ip -6 addr show dev "$x" | grep -q 'scope global'; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+create_systemd_service() {
+    local service="[Unit]
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStart=$PROG_DIR/tariq start-container
+ExecStop=$PROG_DIR/tariq stop-container
+
+[Install]
+WantedBy=multi-user.target"
+
+    if ! echo "$service" | cmp -s - /etc/systemd/system/tariq.service; then
+        echo "$service" > /etc/systemd/system/tariq.service
+        systemctl daemon-reload
+    fi
+}
+
+reset_iptables() {
+    local chains=$(iptables -w -S | awk '/^-N tariq/ { print $2 }')
+    local x
+
+    for x in $chains; do
+        noout iptables -w -F $x
+        iptables -w -S | grep -- "-j ${x}\([[:space:]]\|$\)" | tac | \
+            awk '{ $1 = "-D"; system("iptables -w "$0) }'
+        iptables -w -X $x
+    done
+}
+
+reset_ip6tables() {
+    local chains=$(ip6tables -w -S | awk '/^-N tariq/ { print $2 }')
+    local x
+
+    for x in $chains; do
+        noout ip6tables -w -F $x
+        ip6tables -w -S | grep -- "-j ${x}\([[:space:]]\|$\)" | tac | \
+            awk '{ $1 = "-D"; system("ip6tables -w "$0) }'
+        ip6tables -w -X $x
+    done
+}
+
+prepare_iptables() {
+    reset_iptables
+
+    # create chains
+    iptables -w -N tariq-input
+    iptables -w -N tariq-forward
+    iptables -w -N tariq-filter
+
+    iptables -w -I INPUT -j tariq-input
+    iptables -w -I FORWARD -j tariq-forward
+    iptables -w -A tariq-input -j tariq-filter
+    iptables -w -A tariq-forward -o tariq0 -j tariq-filter
+
+    # block our services for all IPs
+    iptables -w -A tariq-input ! -i lo -p tcp --dport 443 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-input ! -i lo -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-input ! -i lo -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-input ! -i lo -p udp --dport 53 -j REJECT --reject-with icmp-port-unreachable
+
+    iptables -w -A tariq-forward -o tariq0 -p tcp --dport 443 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-forward -o tariq0 -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-forward -o tariq0 -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-forward -o tariq0 -p udp --dport 53 -j REJECT --reject-with icmp-port-unreachable
+
+    # unblock our services for the allowed IPs
+    if [[ -f /etc/tariq/allowed_ips ]]; then
+        local x
+        for x in $(cat /etc/tariq/allowed_ips); do
+            allow_ip "$x"
+        done
+    fi
+}
+
+prepare_ip6tables() {
+    reset_ip6tables
+
+    ip6tables -w -N tariq-input
+    ip6tables -w -N tariq-forward
+    ip6tables -w -N tariq-filter
+
+    ip6tables -w -I INPUT -j tariq-input
+    ip6tables -w -I FORWARD -j tariq-forward
+    ip6tables -w -A tariq-input -j tariq-filter
+    ip6tables -w -A tariq-forward -o tariq0 -j tariq-filter
+
+    # block our services for all IPs
+    ip6tables -w -A tariq-input ! -i lo -p tcp --dport 443 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-input ! -i lo -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-input ! -i lo -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-input ! -i lo -p udp --dport 53 -j REJECT --reject-with icmp6-adm-prohibited
+
+    ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 443 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-forward -o tariq0 -p udp --dport 53 -j REJECT --reject-with icmp6-adm-prohibited
+
+    # unblock our services for the allowed IPs
+    if [[ -f /etc/tariq/allowed_ips ]]; then
+        local x
+        for x in $(cat /etc/tariq/allowed_ips); do
+            allow_ip "$x"
+        done
+    fi
+}
+
+start_container() {
+    local x
+
+    if is_running tariq; then
+        echo_err 'Tariq is not already running.'
+        return 1
+    fi
+
+    noout docker network rm tariq-net
+
+    # in general IPv6 NAT is not suggested but some VPS providers do not offer
+    # configurable IPv6 address range, so we workaround this.
+    local ipv6_masq=0
+    if is_true "${config[ipv6nat]}" && has_global_ipv6; then
+        local net_opts=(--ipv6 --subnet=fd00::/64)
+        ip6tables -t nat -I POSTROUTING -s fd00::/64 ! -o tariq0 -j MASQUERADE
+        sysctl -qw net.ipv6.conf.all.forwarding=1
+        ipv6_masq=1
+    fi
+
+    noout docker network create "${net_opts[@]}" \
+        --opt com.docker.network.bridge.name=tariq0 \
+        tariq-net
+
+    if is_true "${config[iptables]}"; then
+        prepare_iptables
+        prepare_ip6tables
+    fi
+
+    is_container tariq && docker rm tariq
+    docker run -i --rm -p 53:53 -p 53:53/udp -p 80:80 -p 443:443 \
+        --cap-add=NET_ADMIN --name tariq \
+        --net=tariq-net \
+        -e DNS_SERVER="${config[dns]}" \
+        AliKhadivi/tariq
+
+    if is_true "${config[iptables]}"; then
+        reset_iptables
+        reset_ip6tables
+    fi
+
+    if is_true "$ipv6_masq"; then
+        while noout ip6tables -t nat -D POSTROUTING -s fd00::/64 ! -o tariq0 -j MASQUERADE; do
+            true
+        done
+    fi
+}
+
+stop_container() {
+    is_running tariq || return 1
+    docker stop tariq
+}
+
+start() {
+    if is_running tariq; then
+        echo_err 'Tariq is not already running.'
+        return 1
+    fi
+
+    create_systemd_service
+    systemctl start tariq
+}
+
+stop() {
+    systemctl stop tariq
+}
+
+enable() {
+    create_systemd_service
+    systemctl enable tariq
+}
+
+disable() {
+    systemctl disable tariq
+}
+
+status() {
+    local boot=no
+    local running=no
+
+    [[ "$(systemctl is-enabled tariq 2> /dev/null)" == "enabled" ]] && boot=yes
+    is_running tariq && running=yes
+
+    echo "Start on boot: $boot"
+    echo "Running: $running"
+}
+
+get_allowed_ips() {
+    iptables -w -S tariq-filter | grep -- "-j ACCEPT\([[:space:]]\|$\)" | \
+        awk '{ sub("/32", "", $4); print $4 }' | sort | uniq
+    ip6tables -w -S tariq-filter | grep -- "-j ACCEPT\([[:space:]]\|$\)" | \
+        awk '{ sub("/128", "", $4); print $4 }' | sort | uniq
+    return 0
+}
+
+update_allowed_ips_file() {
+    get_allowed_ips > /etc/tariq/allowed_ips
+}
+
+allow_ip() {
+    disallow_ip "$1" || return 1
+
+    if is_ipv4 "$1"; then
+        iptables -w -A tariq-filter -s "$1" -j ACCEPT && return 0
+    elif is_ipv6 "$1"; then
+        ip6tables -w -A tariq-filter -s "$1" -j ACCEPT && return 0
+    fi
+
+    return 1
+}
+
+disallow_ip() {
+    if is_ipv4 "$1"; then
+        while noout iptables -w -D tariq-filter -s "$1" -j ACCEPT; do
+            true
+        done
+        return 0
+    elif is_ipv6 "$1"; then
+        while noout ip6tables -w -D tariq-filter -s "$1" -j ACCEPT; do
+            true
+        done
+        return 0
+    fi
+    return 1
+
+}
+
+add_ip() {
+    if ! is_running tariq; then
+        echo_err 'Tariq is not running.'
+        return 1
+    fi
+
+    if ! is_true "${config[iptables]}"; then
+        echo_err "This command is disabled because you have iptables config option as false."
+        return 1
+    fi
+
+    allow_ip "$1" && update_allowed_ips_file
+    return 0
+}
+
+rm_ip() {
+    if ! is_running tariq; then
+        echo_err 'Tariq is not running.'
+        return 1
+    fi
+
+    if ! is_true "${config[iptables]}"; then
+        echo_err "This command is disabled because you have iptables config option as false."
+        return 1
+    fi
+
+    disallow_ip "$1" && update_allowed_ips_file
+    return 0
+}
+
+list_ips() {
+    if ! is_running tariq; then
+        echo_err 'Tariq is not running.'
+        return 1
+    fi
+
+    if ! is_true "${config[iptables]}"; then
+        echo_err "This command is disabled because you have iptables config option as false."
+        return 1
+    fi
+
+    get_allowed_ips
+}
+
+
+
+add_ddns() {
+    if ! is_running tariq; then
+        echo_err 'Tariq is not running.'
+        return 1
+    fi
+
+    if ! is_true "${config[iptables]}"; then
+        echo_err "This command is disabled because you have iptables config option as false."
+        return 1
+    fi
+    ip=$(dig $1 +short A)
+    allow_ip "$ip" && update_allowed_ips_file
+    echo "$ip" >> /etc/tariq/allowed_ddns
+    reload_ddns
+    return 0
+}
+
+rm_ddns() {
+    if ! is_running tariq; then
+        echo_err 'Tariq is not running.'
+        return 1
+    fi
+
+    if ! is_true "${config[iptables]}"; then
+        echo_err "This command is disabled because you have iptables config option as false."
+        return 1
+    fi
+    ip=$(dig $1 +short A)
+    disallow_ip "$ip" && update_allowed_ips_file
+    # disallow_ip "$1" && update_allowed_ips_file
+    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns
+    reload_ddns
+    return 0
+}
+
+list_ddns() {
+    if ! is_running tariq; then
+        echo_err 'Tariq is not running.'
+        return 1
+    fi
+
+    if ! is_true "${config[iptables]}"; then
+        echo_err "This command is disabled because you have iptables config option as false."
+        return 1
+    fi
+    
+    if [[ -f /etc/tariq/allowed_ddns ]]; then
+        echo "List of ddns:"
+        local x
+        for x in $(cat /etc/tariq/allowed_ddns); do
+            ip=$(dig $x +short A)
+            echo "$x : $ip"
+        done
+    fi
+
+    # get_allowed_ips
+}
+
+reload_ddns() {
+    if [[ -f /etc/tariq/allowed_ddns ]]; then
+        local x
+        for x in $(cat /etc/tariq/allowed_ddns); do
+            ip=$(dig $x +short A)
+            allow_ip "$ip"
+        done
+    fi
+}
+
+
+config_get() {
+    local var="$1"
+    shift
+
+    if [[ -z "$var" ]]; then
+        for var in "${!config[@]}"; do
+            echo "${var}=${config[$var]}"
+        done
+    else
+        echo "${config[$var]}"
+    fi
+    return 0
+}
+
+config_set() {
+    local var="$1"
+    shift
+    if [[ -z "$@" ]]; then
+        unset -v 'config[$var]'
+    else
+        config[$var]="$@"
+    fi
+    save_config
+}
+
+if [[ -z "$1" || "$1" == "help" ]]; then
+    usage
+    exit 0
+fi
+
+if [[ $(id -u) -ne 0 ]]; then
+    echo_err "You must run it as root."
+    exit 1
+fi
+
+mkdir -p /etc/tariq
+load_config
+
+case "$1" in
+    start-container)
+        start_container
+        ;;
+    stop-container)
+        stop_container
+        ;;
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    enable)
+        enable
+        ;;
+    disable)
+        disable
+        ;;
+    status)
+        status
+        ;;
+    add-ip)
+        shift
+        add_ip "$@"
+        ;;
+    rm-ip)
+        shift
+        rm_ip "$@"
+        ;;
+    list-ips)
+        list_ips
+        ;;
+    add-ddns)
+        shift
+        add_ddns "$@"
+        ;;
+    rm-ddns)
+        shift
+        rm_ddns "$@"
+        ;;
+    list-ddns)
+        list_ddns
+        ;;
+    reload-ddns)
+        reload_ddns
+        ;;
+    config-get)
+        shift
+        config_get "$@"
+        ;;
+    config-set)
+        shift
+        config_set "$@"
+        ;;
+    *)
+        [[ -n "$1" ]] && echo_err "Invalid command: $1"
+        echo_err "For usage run: $0 help"
+        exit 1
+        ;;
+esac
+
+exit $?
