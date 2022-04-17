@@ -442,19 +442,19 @@ add_ddns() {
     ip="$(dig $1 +short A)"
 
     if is_ipv4 "$ip"; then
-        echo "IP: [$ip]"
+        echo "IP: [$1]($ip)"
     else
         echo "Bad IP $ip"
         exit 1
     fi
 
-    mkdir -p /etc/tariq/ddns_ips/
-    echo "$ip" >"/etc/tariq/ddns_ips/$1"
     disallow_ip "$ip" && update_allowed_ips_file
     # disallow_ip "$1" && update_allowed_ips_file
     sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
 
     allow_ip $ip && update_allowed_ips_file
+    mkdir -p /etc/tariq/ddns_ips/
+    echo "$ip" >"/etc/tariq/ddns_ips/$1"
     echo "$1" >>/etc/tariq/allowed_ddns
     reload_ddns
     return 0
@@ -520,7 +520,7 @@ reload_ddns() {
     if [[ -f /etc/tariq/allowed_ddns ]]; then
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
-            ip="$(cat /etc/tariq/ddns_ips/$1)"
+            ip="$(cat /etc/tariq/ddns_ips/$x)"
             NewIP="$(dig $x +short A)"
             if is_ipv4 "$NewIP"; then
                 echo "$x : $ip : NewIP"
