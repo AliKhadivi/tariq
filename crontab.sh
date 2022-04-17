@@ -12,12 +12,12 @@ sudo crontab -l > /tmp/tariq_cron
 # echo "0 */1 * * * echo hello" >> /tmp/tariq_cron
 crontab="*/15 * * * * tariq reload-ddns"
 
-    if grep -Fxq "$crontab" /etc/tariq/allowed_ddns
-    then
-        echo "Crontab already exist."
-    else
-        sudo echo "$crontab" >> /tmp/tariq_cron
-    fi
+if grep -Fxq "$crontab" /tmp/tariq_cron
+then
+    echo "Crontab already exist."
+else
+    sudo echo "$crontab" >> /tmp/tariq_cron
+fi
 
 
 #install new cron file
