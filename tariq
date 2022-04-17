@@ -358,6 +358,7 @@ allow_ip() {
     disallow_ip "$1" || return 1
 
     if is_ipv4 "$1"; then
+        echo 'iptables -w -A tariq-filter -s '"$1"' -j ACCEPT'
         iptables -w -A tariq-filter -s "$1" -j ACCEPT && return 0
     elif is_ipv6 "$1"; then
         ip6tables -w -A tariq-filter -s "$1" -j ACCEPT && return 0
@@ -438,8 +439,8 @@ add_ddns() {
         echo_err "This command is disabled because you have iptables config option as false."
         return 1
     fi
-    ip=$(dig $1 +short A)
-    echo "Ip: $ip"
+    ip="$(dig $1 +short A)"
+    echo "Ip: [$ip]"
     allow_ip $ip && update_allowed_ips_file
     echo "$ip" >> /etc/tariq/allowed_ddns
     reload_ddns
