@@ -6,7 +6,7 @@ PROG_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
 typeset -A config
 config=(
-    [dns]='8.8.8.8,8.8.4.4'
+    [dns]='8.8.8.8,8.8.4.4,4.2.2.4,1.1.1.1'
     [iptables]='true'
     [ipv6nat]='true'
 )
@@ -28,7 +28,7 @@ usage() {
     echo "  add-ddns                        Add allowed DDNS"
     echo "  rm-ddns                         Remove allowed DDNS"
     echo "  list-ddns                       List DDNS"
-    echo "  reload-ddns                     Reload DDNS"
+    echo "  reload-ddns                     Update ddns ips"
     echo "  config-get [<option>]           Get value of a config option"
     echo "  config-set <option> [<value>]   Set value to a config option"
     echo
@@ -439,7 +439,7 @@ add_ddns() {
         return 1
     fi
 
-    ip="$(dig $1 +short A)"
+    ip="$(dig $1 +short +expire A)"
 
     if is_ipv4 "$ip"; then
         echo "IP: [$1]($ip)"
@@ -460,7 +460,7 @@ add_ddns() {
         mkdir -p /etc/tariq/ddns_ips/
         echo "$ip" >"/etc/tariq/ddns_ips/$1"
         echo "$1" >> /etc/tariq/allowed_ddns
-        reload_ddns
+        # reload_ddns
     fi
 
     return 0
@@ -476,11 +476,11 @@ rm_ddns() {
         echo_err "This command is disabled because you have iptables config option as false."
         return 1
     fi
-    # ip="$(dig $1 +short A)"
+    # ip="$(dig $1 +short +expire A)"
     ip="$(cat /etc/tariq/ddns_ips/$1)"
 
     if is_ipv4 "$ip"; then
-        echo "IP: [$ip]"
+        echo "IP: [$1]($ip)"
     else
         echo "Bad IP $ip"
         exit 1
@@ -490,7 +490,7 @@ rm_ddns() {
     # disallow_ip "$1" && update_allowed_ips_file
     sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >> /tmp/tariq_log
     rm -f "/etc/tariq/ddns_ips/$1"
-    reload_ddns
+    # reload_ddns
     return 0
 }
 
@@ -509,7 +509,7 @@ list_ddns() {
         echo "List of ddns:"
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
-            # ip="$(dig $x +short A)"
+            # ip="$(dig $x +short +expire A)"
             ip="$(cat /etc/tariq/ddns_ips/$x)"
             if is_ipv4 "$ip"; then
                 echo "$x : $ip"
@@ -528,7 +528,7 @@ reload_ddns() {
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
             ip="$(cat /etc/tariq/ddns_ips/$x)"
-            NewIP="$(dig $x +short A)"
+            NewIP="$(dig $x +short +expire A)"
             if is_ipv4 "$NewIP"; then
                 echo "$x : $ip : $NewIP"
                 if [ $ip == $NewIP ]; then
