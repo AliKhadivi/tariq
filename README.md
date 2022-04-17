@@ -18,16 +18,17 @@ sudo apt install iptables ipset
 ## Install from DockerHub
 
 ```bash
-docker pull AliKhadivi/tariq
-docker run -v /usr/local/bin:/install AliKhadivi/tariq instl
+docker pull alikhadivi/tariq
+docker run -v /usr/local/bin:/install alikhadivi/tariq instl
 ```
 
 ## Install from GitHub
 
 ```bash
-git clone https://github.com/AliKhadivi/tariq
+git clone https://github.com/alikhadivi/tariq
 cd tariq
-docker build -t AliKhadivi/tariq .
+chmod +x build.sh dnsmasq.sh instl my_init sniproxy.sh tariq update_domains.sh 
+docker build -t alikhadivi/tariq .
 ln -snf $PWD/tariq /usr/local/bin/tariq
 ```
 

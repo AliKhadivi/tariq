@@ -17,7 +17,7 @@ then
 	exit
 fi
 
-docker build -t AliKhadivi/tariq .
+docker build -t alikhadivi/tariq .
 tariq restart
 
 # to check your speed run: wget https://cachefly.cachefly.net/100mb.test

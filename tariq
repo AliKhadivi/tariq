@@ -289,7 +289,7 @@ start_container() {
         --cap-add=NET_ADMIN --name tariq \
         --net=tariq-net \
         -e DNS_SERVER="${config[dns]}" \
-        AliKhadivi/tariq
+        alikhadivi/tariq
 
     if is_true "${config[iptables]}"; then
         reset_iptables

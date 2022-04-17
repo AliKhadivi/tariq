@@ -11,7 +11,7 @@ fi
 
 
 #./update_domains.sh
-docker build -t AliKhadivi/tariq .
+docker build -t alikhadivi/tariq .
 tariq restart
 #tariq stop
 #tariq start
