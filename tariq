@@ -440,7 +440,7 @@ add_ddns() {
     fi
     ip=$(dig $1 +short A)
     echo "Ip: $ip"
-    allow_ip "$ip" && update_allowed_ips_file
+    allow_ip $ip && update_allowed_ips_file
     echo "$ip" >> /etc/tariq/allowed_ddns
     reload_ddns
     return 0
