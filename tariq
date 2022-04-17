@@ -6,7 +6,7 @@ PROG_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
 typeset -A config
 config=(
-    [dns]='8.8.8.8,8.8.4.4,4.2.2.4,1.1.1.1'
+    [dns]='8.8.8.8,8.8.4.4'
     [iptables]='true'
     [ipv6nat]='true'
 )
