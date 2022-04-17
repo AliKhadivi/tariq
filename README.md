@@ -32,6 +32,12 @@ docker build -t alikhadivi/tariq .
 ln -snf $PWD/tariq /usr/local/bin/tariq
 ```
 
+## Enable Cronjob
+```bash
+cd /opt/tariq
+./crontab.sh
+```
+
 ## Usage
 
 Tariq needs to be installed on a server to the region you are interested.
