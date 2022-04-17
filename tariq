@@ -448,15 +448,21 @@ add_ddns() {
         exit 1
     fi
 
-    disallow_ip "$ip" && update_allowed_ips_file
-    # disallow_ip "$1" && update_allowed_ips_file
-    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
+    if grep -Fxq "$1" /etc/tariq/allowed_ddns
+    then
+        echo "This ddns already exist."
+    else
+        disallow_ip "$ip" && update_allowed_ips_file
+        # disallow_ip "$1" && update_allowed_ips_file
+        sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
 
-    allow_ip $ip && update_allowed_ips_file
-    mkdir -p /etc/tariq/ddns_ips/
-    echo "$ip" >"/etc/tariq/ddns_ips/$1"
-    echo "$1" >>/etc/tariq/allowed_ddns
-    reload_ddns
+        allow_ip $ip && update_allowed_ips_file
+        mkdir -p /etc/tariq/ddns_ips/
+        echo "$ip" >"/etc/tariq/ddns_ips/$1"
+        echo "$1" >> /etc/tariq/allowed_ddns
+        reload_ddns
+    fi
+
     return 0
 }
 
@@ -482,7 +488,8 @@ rm_ddns() {
 
     disallow_ip "$ip" && update_allowed_ips_file
     # disallow_ip "$1" && update_allowed_ips_file
-    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
+    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >> /tmp/tariq_log
+    rm -f "/etc/tariq/ddns_ips/$1"
     reload_ddns
     return 0
 }
@@ -523,13 +530,12 @@ reload_ddns() {
             ip="$(cat /etc/tariq/ddns_ips/$x)"
             NewIP="$(dig $x +short A)"
             if is_ipv4 "$NewIP"; then
-                echo "$x : $ip : NewIP"
+                echo "$x : $ip : $NewIP"
                 if [ $ip == $NewIP ]; then
                     echo "Not changed IP $ip"
                 else
                     allow_ip "$ip"
                 fi
-
             else
                 echo "Bad IP $ip"
             fi
