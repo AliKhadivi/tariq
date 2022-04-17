@@ -14,20 +14,20 @@ Tariq is yet another smart DNS solution to bypass geo-blocking.
 ```bash
 sudo apt install iptables ipset
 ``` -->
-
+<!-- 
 ## Install from DockerHub
 
 ```bash
 docker pull alikhadivi/tariq
 docker run -v /usr/local/bin:/install alikhadivi/tariq instl
-```
+``` -->
 
-## Install from GitHub
+## Installation
 
 ```bash
+cd /opt
 git clone https://github.com/alikhadivi/tariq
 cd tariq
-chmod +x build.sh dnsmasq.sh instl my_init sniproxy.sh tariq update_domains.sh 
 docker build -t alikhadivi/tariq .
 ln -snf $PWD/tariq /usr/local/bin/tariq
 ```
@@ -66,6 +66,30 @@ tariq rm-ip 1.2.3.4
 
 ```bash
 tariq list-ips
+```
+
+### Allow an DDNS Client to use your smart DNS
+
+```bash
+tariq add-ddns mypc.example.com
+```
+
+### Remove an DDNS Client
+
+```bash
+tariq rm-ddns mypc.example.com
+```
+
+### List all allowed DDNS Client
+
+```bash
+tariq list-ddns
+```
+
+### Update DDNS Client IP
+
+```bash
+tariq reload-ddns
 ```
 
 ### Configuration

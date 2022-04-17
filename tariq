@@ -531,11 +531,12 @@ reload_ddns() {
             ip="$(cat /etc/tariq/ddns_ips/$x)"
             NewIP="$(dig $x +short +expire A)"
             if is_ipv4 "$NewIP"; then
-                echo "$x : $ip : $NewIP"
+                # echo "$x : $ip : $NewIP"
                 if [ $ip == $NewIP ]; then
-                    echo "Not changed IP $ip"
+                    echo "Not changed IP $x"
                 else
                     allow_ip "$ip"
+                    echo "Changed DDNS $x (from IP $ip to $NewIP)"
                 fi
             else
                 echo "Bad IP $ip"
