@@ -359,7 +359,7 @@ allow_ip() {
     disallow_ip "$1" || return 1
 
     if is_ipv4 "$1"; then
-        echo 'iptables -w -A tariq-filter -s '"$1"' -j ACCEPT'
+        # echo 'iptables -w -A tariq-filter -s '"$1"' -j ACCEPT'
         iptables -w -A tariq-filter -s "$1" -j ACCEPT && return 0
     elif is_ipv6 "$1"; then
         ip6tables -w -A tariq-filter -s "$1" -j ACCEPT && return 0
