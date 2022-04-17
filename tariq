@@ -525,6 +525,7 @@ list_ddns() {
 
 reload_ddns() {
     if [[ -f /etc/tariq/allowed_ddns ]]; then
+        sudo systemd-resolve --flush-caches >> /tmp/tariq_log
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
             ip="$(cat /etc/tariq/ddns_ips/$x)"
