@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir -p /etc/tariq/
 PROG="$(basename $0)"
 PROG_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
@@ -47,7 +48,7 @@ load_config() {
                 var="${line%%=*}"
                 config[$var]="${line#*=}"
             fi
-        done < /etc/tariq/config
+        done </etc/tariq/config
     fi
 }
 
@@ -55,7 +56,7 @@ save_config() {
     local var
     for var in "${!config[@]}"; do
         echo "${var}=${config[$var]}"
-    done > /etc/tariq/config
+    done >/etc/tariq/config
 }
 
 is_true() {
@@ -67,15 +68,15 @@ echo_err() {
 }
 
 noout() {
-    "$@" > /dev/null 2>&1
+    "$@" >/dev/null 2>&1
 }
 
 is_running() {
-    docker inspect -f '{{.State.Running}}' "$1" 2> /dev/null | grep -qE '^true$'
+    docker inspect -f '{{.State.Running}}' "$1" 2>/dev/null | grep -qE '^true$'
 }
 
 is_container() {
-    [[ -n "$(docker inspect -f '{{.State.Running}}' "$1" 2> /dev/null)" ]]
+    [[ -n "$(docker inspect -f '{{.State.Running}}' "$1" 2>/dev/null)" ]]
 }
 
 is_num() {
@@ -161,7 +162,7 @@ ExecStop=$PROG_DIR/tariq stop-container
 WantedBy=multi-user.target"
 
     if ! echo "$service" | cmp -s - /etc/systemd/system/tariq.service; then
-        echo "$service" > /etc/systemd/system/tariq.service
+        echo "$service" >/etc/systemd/system/tariq.service
         systemctl daemon-reload
     fi
 }
@@ -172,7 +173,7 @@ reset_iptables() {
 
     for x in $chains; do
         noout iptables -w -F $x
-        iptables -w -S | grep -- "-j ${x}\([[:space:]]\|$\)" | tac | \
+        iptables -w -S | grep -- "-j ${x}\([[:space:]]\|$\)" | tac |
             awk '{ $1 = "-D"; system("iptables -w "$0) }'
         iptables -w -X $x
     done
@@ -184,7 +185,7 @@ reset_ip6tables() {
 
     for x in $chains; do
         noout ip6tables -w -F $x
-        ip6tables -w -S | grep -- "-j ${x}\([[:space:]]\|$\)" | tac | \
+        ip6tables -w -S | grep -- "-j ${x}\([[:space:]]\|$\)" | tac |
             awk '{ $1 = "-D"; system("ip6tables -w "$0) }'
         ip6tables -w -X $x
     done
@@ -335,7 +336,7 @@ status() {
     local boot=no
     local running=no
 
-    [[ "$(systemctl is-enabled tariq 2> /dev/null)" == "enabled" ]] && boot=yes
+    [[ "$(systemctl is-enabled tariq 2>/dev/null)" == "enabled" ]] && boot=yes
     is_running tariq && running=yes
 
     echo "Start on boot: $boot"
@@ -343,15 +344,15 @@ status() {
 }
 
 get_allowed_ips() {
-    iptables -w -S tariq-filter | grep -- "-j ACCEPT\([[:space:]]\|$\)" | \
+    iptables -w -S tariq-filter | grep -- "-j ACCEPT\([[:space:]]\|$\)" |
         awk '{ sub("/32", "", $4); print $4 }' | sort | uniq
-    ip6tables -w -S tariq-filter | grep -- "-j ACCEPT\([[:space:]]\|$\)" | \
+    ip6tables -w -S tariq-filter | grep -- "-j ACCEPT\([[:space:]]\|$\)" |
         awk '{ sub("/128", "", $4); print $4 }' | sort | uniq
     return 0
 }
 
 update_allowed_ips_file() {
-    get_allowed_ips > /etc/tariq/allowed_ips
+    get_allowed_ips >/etc/tariq/allowed_ips
 }
 
 allow_ip() {
@@ -427,8 +428,6 @@ list_ips() {
     get_allowed_ips
 }
 
-
-
 add_ddns() {
     if ! is_running tariq; then
         echo_err 'Tariq is not running.'
@@ -439,13 +438,24 @@ add_ddns() {
         echo_err "This command is disabled because you have iptables config option as false."
         return 1
     fi
+
     ip="$(dig $1 +short A)"
+
+    if is_ipv4 "$1"; then
+        echo "IP: [$ip]"
+    else
+        echo "Bad IP $ip"
+        exit 1
+    fi
+
+    mkdir -p /etc/tariq/ddns_ips/
+    echo "$ip" >"/etc/tariq/ddns_ips/$1"
     disallow_ip "$ip" && update_allowed_ips_file
     # disallow_ip "$1" && update_allowed_ips_file
-    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns
-    echo "Ip: [$ip]"
+    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
+
     allow_ip $ip && update_allowed_ips_file
-    echo "$1" >> /etc/tariq/allowed_ddns
+    echo "$1" >>/etc/tariq/allowed_ddns
     reload_ddns
     return 0
 }
@@ -460,10 +470,19 @@ rm_ddns() {
         echo_err "This command is disabled because you have iptables config option as false."
         return 1
     fi
-    ip=$(dig $1 +short A)
+    # ip="$(dig $1 +short A)"
+    ip="$(cat /etc/tariq/ddns_ips/$1)"
+
+    if is_ipv4 "$1"; then
+        echo "IP: [$ip]"
+    else
+        echo "Bad IP $ip"
+        exit 1
+    fi
+
     disallow_ip "$ip" && update_allowed_ips_file
     # disallow_ip "$1" && update_allowed_ips_file
-    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns
+    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
     reload_ddns
     return 0
 }
@@ -478,13 +497,19 @@ list_ddns() {
         echo_err "This command is disabled because you have iptables config option as false."
         return 1
     fi
-    
+
     if [[ -f /etc/tariq/allowed_ddns ]]; then
         echo "List of ddns:"
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
-            ip=$(dig $x +short A)
-            echo "$x : $ip"
+            # ip="$(dig $x +short A)"
+            ip="$(cat /etc/tariq/ddns_ips/$x)"
+            if is_ipv4 "$ip"; then
+                echo "$x : $ip"
+                allow_ip "$ip"
+            else
+                echo "Bad IP $ip"
+            fi
         done
     fi
 
@@ -495,12 +520,22 @@ reload_ddns() {
     if [[ -f /etc/tariq/allowed_ddns ]]; then
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
-            ip=$(dig $x +short A)
-            allow_ip "$ip"
+            ip="$(cat /etc/tariq/ddns_ips/$1)"
+            NewIP="$(dig $x +short A)"
+            if is_ipv4 "$NewIP"; then
+                echo "$x : $ip : NewIP"
+                if [ $ip == $NewIP ]; then
+                    echo "Not changed IP: $ip"
+                else
+                    allow_ip "$ip"
+                fi
+
+            else
+                echo "Bad IP $ip"
+            fi
         done
     fi
 }
-
 
 config_get() {
     local var="$1"
@@ -541,71 +576,69 @@ mkdir -p /etc/tariq
 load_config
 
 case "$1" in
-    start-container)
-        start_container
-        ;;
-    stop-container)
-        stop_container
-        ;;
-    start)
-        start
-        ;;
-    stop)
-        stop
-        ;;
-    restart)
-        stop
-        start
-        ;;
-    enable)
-        enable
-        ;;
-    disable)
-        disable
-        ;;
-    status)
-        status
-        ;;
-    add-ip)
-        shift
-        add_ip "$@"
-        ;;
-    rm-ip)
-        shift
-        rm_ip "$@"
-        ;;
-    list-ips)
-        list_ips
-        ;;
-    add-ddns)
-        shift
-        add_ddns "$@"
-        ;;
-    rm-ddns)
-        shift
-        rm_ddns "$@"
-        ;;
-    list-ddns)
-        list_ddns
-        ;;
-    reload-ddns)
-        reload_ddns
-        ;;
-    config-get)
-        shift
-        config_get "$@"
-        ;;
-    config-set)
-        shift
-        config_set "$@"
-        ;;
-    *)
-        [[ -n "$1" ]] && echo_err "Invalid command: $1"
-        echo_err "For usage run: $0 help"
-        exit 1
-        ;;
+start-container)
+    start_container
+    ;;
+stop-container)
+    stop_container
+    ;;
+start)
+    start
+    ;;
+stop)
+    stop
+    ;;
+restart)
+    stop
+    start
+    ;;
+enable)
+    enable
+    ;;
+disable)
+    disable
+    ;;
+status)
+    status
+    ;;
+add-ip)
+    shift
+    add_ip "$@"
+    ;;
+rm-ip)
+    shift
+    rm_ip "$@"
+    ;;
+list-ips)
+    list_ips
+    ;;
+add-ddns)
+    shift
+    add_ddns "$@"
+    ;;
+rm-ddns)
+    shift
+    rm_ddns "$@"
+    ;;
+list-ddns)
+    list_ddns
+    ;;
+reload-ddns)
+    reload_ddns
+    ;;
+config-get)
+    shift
+    config_get "$@"
+    ;;
+config-set)
+    shift
+    config_set "$@"
+    ;;
+*)
+    [[ -n "$1" ]] && echo_err "Invalid command: $1"
+    echo_err "For usage run: $0 help"
+    exit 1
+    ;;
 esac
 
 exit $?
-
-
