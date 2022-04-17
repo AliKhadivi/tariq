@@ -440,9 +440,12 @@ add_ddns() {
         return 1
     fi
     ip="$(dig $1 +short A)"
+    disallow_ip "$ip" && update_allowed_ips_file
+    # disallow_ip "$1" && update_allowed_ips_file
+    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns
     echo "Ip: [$ip]"
     allow_ip $ip && update_allowed_ips_file
-    echo "$ip" >> /etc/tariq/allowed_ddns
+    echo "$1" >> /etc/tariq/allowed_ddns
     reload_ddns
     return 0
 }
