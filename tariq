@@ -441,7 +441,7 @@ add_ddns() {
 
     ip="$(dig $1 +short A)"
 
-    if is_ipv4 "$1"; then
+    if is_ipv4 "$ip"; then
         echo "IP: [$ip]"
     else
         echo "Bad IP $ip"
@@ -473,7 +473,7 @@ rm_ddns() {
     # ip="$(dig $1 +short A)"
     ip="$(cat /etc/tariq/ddns_ips/$1)"
 
-    if is_ipv4 "$1"; then
+    if is_ipv4 "$ip"; then
         echo "IP: [$ip]"
     else
         echo "Bad IP $ip"
@@ -506,7 +506,7 @@ list_ddns() {
             ip="$(cat /etc/tariq/ddns_ips/$x)"
             if is_ipv4 "$ip"; then
                 echo "$x : $ip"
-                allow_ip "$ip"
+                # allow_ip "$ip"
             else
                 echo "Bad IP $ip"
             fi
@@ -525,7 +525,7 @@ reload_ddns() {
             if is_ipv4 "$NewIP"; then
                 echo "$x : $ip : NewIP"
                 if [ $ip == $NewIP ]; then
-                    echo "Not changed IP: $ip"
+                    echo "Not changed IP $ip"
                 else
                     allow_ip "$ip"
                 fi
