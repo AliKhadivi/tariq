@@ -40,7 +40,7 @@ ln -snf $PWD/tariq /usr/local/bin/tariq
 ## Usage
 
 Tariq needs to be installed on a server to the region you are interested.
-After you start it, change the DNS of your TV to the IP of your server.
+After you start it, change the DNS of client to the IP of your server.
 
 ### Start Tariq and enable it on boot
 
