@@ -1,10 +1,9 @@
 FROM alpine
 
-RUN apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq
+RUN apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq && mkdir -p /opt/tariq
 
 ADD instl /usr/local/bin/
-RUN mkdir -p /opt/tariq
-ADD dnsmasq.sh sniproxy.sh domains tariq /opt/tariq/
+COPY ./ /opt/tariq/
 
 ADD services.ini /etc/supervisor.d/
 ADD my_init /
