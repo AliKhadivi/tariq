@@ -53,7 +53,7 @@ else
     EXT_IP=${EXT_IP:-$(get_ext_ip)}
     EXT_IPV6=${EXT_IPV6:-$(get_ext_ipv6)}
 
-    for x in $(cat /opt/tariq/domains); do
+    for x in $(cat /opt/tariq/domains/*); do
         [[ -n "$EXT_IP" ]] && echo "address=/$x/$EXT_IP" >> $conf
         [[ -n "$EXT_IPV6" ]] && echo "address=/$x/$EXT_IPV6" >> $conf
     done
