@@ -30,6 +30,7 @@ usage() {
     echo "  list-ddns                       List DDNS"
     echo "  reload-ddns                     Update ddns ips"
     echo "  cronjob                         Enable Cronjob"
+    echo "  update                          Update Tariq"
     echo "  config-get [<option>]           Get value of a config option"
     echo "  config-set <option> [<value>]   Set value to a config option"
     echo
@@ -449,8 +450,7 @@ add_ddns() {
         exit 1
     fi
 
-    if grep -Fxq "$1" /etc/tariq/allowed_ddns
-    then
+    if grep -Fxq "$1" /etc/tariq/allowed_ddns; then
         echo "This ddns already exist."
     else
         disallow_ip "$ip" && update_allowed_ips_file
@@ -460,7 +460,7 @@ add_ddns() {
         allow_ip $ip && update_allowed_ips_file
         mkdir -p /etc/tariq/ddns_ips/
         echo "$ip" >"/etc/tariq/ddns_ips/$1"
-        echo "$1" >> /etc/tariq/allowed_ddns
+        echo "$1" >>/etc/tariq/allowed_ddns
         # reload_ddns
     fi
 
@@ -489,7 +489,7 @@ rm_ddns() {
 
     disallow_ip "$ip" && update_allowed_ips_file
     # disallow_ip "$1" && update_allowed_ips_file
-    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >> /tmp/tariq_log
+    sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
     rm -f "/etc/tariq/ddns_ips/$1"
     # reload_ddns
     return 0
@@ -526,7 +526,7 @@ list_ddns() {
 
 reload_ddns() {
     if [[ -f /etc/tariq/allowed_ddns ]]; then
-        sudo systemd-resolve --flush-caches >> /tmp/tariq_log
+        sudo systemd-resolve --flush-caches >>/tmp/tariq_log
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
             ip="$(cat /etc/tariq/ddns_ips/$x)"
@@ -548,7 +548,7 @@ reload_ddns() {
 
 cronjob() {
     #write out current crontab
-    sudo crontab -l > /tmp/tariq_cron
+    sudo crontab -l >/tmp/tariq_cron
     #echo new cron into cron file
     # echo "0 */1 * * * echo hello" >> /tmp/tariq_cron
     crontab="*/5 * * * * tariq reload-ddns"
@@ -561,6 +561,29 @@ cronjob() {
     fi
 
     sudo rm /tmp/tariq_cron
+}
+
+pull() {
+    docker pull alikhadivi/tariq
+}
+
+build() {
+    docker build -t alikhadivi/tariq .
+}
+
+update() {
+    m="$(git pull)"
+    ok="Already up to date."
+
+    if [ "$m" == "$ok" ]; then
+        echo "Tariq already up to date :-)"
+    else
+
+        echo "$m"
+        pull
+        stop
+        start
+    fi
 }
 
 config_get() {
@@ -652,8 +675,17 @@ list-ddns)
 reload-ddns)
     reload_ddns
     ;;
-cronjob )
+cronjob)
     cronjob
+    ;;
+update)
+    update
+    ;;
+pull)
+    pull
+    ;;
+build)
+    build
     ;;
 config-get)
     shift
