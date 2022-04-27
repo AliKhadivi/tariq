@@ -536,7 +536,8 @@ reload_ddns() {
                 if [ $ip == $NewIP ]; then
                     echo "Not changed IP $x"
                 else
-                    allow_ip "$ip"
+                    allow_ip "$NewIP"
+                    echo "$NewIP" >"/etc/tariq/ddns_ips/$1"
                     echo "Changed DDNS $x (from IP $ip to $NewIP)"
                 fi
             else
