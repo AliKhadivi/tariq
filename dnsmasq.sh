@@ -1,5 +1,5 @@
 #!/bin/sh
-
+echo "started dnsmasq script"
 ipv6_iface() {
     ip -6 route | grep '^default' | sed 's/.*dev[[:space:]]\+\([^[:space:]]\+\).*/\1/'
 }
