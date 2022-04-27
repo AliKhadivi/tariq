@@ -4,7 +4,7 @@ RUN apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq && mkdir 
 
 ADD services.ini /etc/supervisor.d/
 ADD instl /usr/local/bin/
-WORKDIR opt/tariq
+WORKDIR /opt/tariq
 COPY . .
 
 #ADD my_init /

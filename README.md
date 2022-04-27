@@ -34,7 +34,7 @@ ln -snf $PWD/tariq /usr/local/bin/tariq
 
 ## Enable Cronjob
 ```bash
-/opt/tariq/crontab.sh
+tariq cronjob
 ```
 
 ## Usage

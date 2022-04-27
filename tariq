@@ -29,6 +29,7 @@ usage() {
     echo "  rm-ddns                         Remove allowed DDNS"
     echo "  list-ddns                       List DDNS"
     echo "  reload-ddns                     Update ddns ips"
+    echo "  cronjob                         Enable Cronjob"
     echo "  config-get [<option>]           Get value of a config option"
     echo "  config-set <option> [<value>]   Set value to a config option"
     echo
@@ -545,6 +546,23 @@ reload_ddns() {
     fi
 }
 
+cronjob() {
+    #write out current crontab
+    sudo crontab -l > /tmp/tariq_cron
+    #echo new cron into cron file
+    # echo "0 */1 * * * echo hello" >> /tmp/tariq_cron
+    crontab="*/5 * * * * tariq reload-ddns"
+
+    if grep -Fxq "$crontab" /tmp/tariq_cron; then
+        echo "Crontab already exist."
+    else
+        sudo echo "$crontab" >>/tmp/tariq_cron
+        sudo crontab /tmp/tariq_cron
+    fi
+
+    sudo rm /tmp/tariq_cron
+}
+
 config_get() {
     local var="$1"
     shift
@@ -633,6 +651,9 @@ list-ddns)
     ;;
 reload-ddns)
     reload_ddns
+    ;;
+cronjob )
+    cronjob
     ;;
 config-get)
     shift
