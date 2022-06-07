@@ -1,6 +1,5 @@
 #!/bin/bash
 
-mkdir -p /etc/tariq/
 PROG="$(basename $0)"
 PROG_DIR="$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")"
 
@@ -459,9 +458,9 @@ add_ddns() {
         sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
 
         allow_ip $ip && update_allowed_ips_file
-        mkdir -p /etc/tariq/ddns_ips/
-        echo "$ip" >"/etc/tariq/ddns_ips/$1"
-        echo "$1" >>/etc/tariq/allowed_ddns
+        sudo mkdir -p /etc/tariq/ddns_ips/
+        sudo echo "$ip" >"/etc/tariq/ddns_ips/$1"
+        sudo echo "$1" >>/etc/tariq/allowed_ddns
         # reload_ddns
     fi
 
@@ -491,7 +490,7 @@ rm_ddns() {
     disallow_ip "$ip" && update_allowed_ips_file
     # disallow_ip "$1" && update_allowed_ips_file
     sed -i '/^'"$1"'/d' /etc/tariq/allowed_ddns >>/tmp/tariq_log
-    rm -f "/etc/tariq/ddns_ips/$1"
+    sudo rm -f "/etc/tariq/ddns_ips/$1"
     # reload_ddns
     return 0
 }
