@@ -2,13 +2,14 @@
 
 Tariq is yet another smart DNS solution to bypass geo-blocking.
 
-## Dependencies
+## Prerequisites
 
 * Docker ([Install](https://docs.docker.com/engine/install/ubuntu/))
 * systemd
 * BASH v4
 * crontab
 * dig
+* iptables
 
 ## Installation
 
