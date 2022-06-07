@@ -27,3 +27,5 @@ storage.googleapis.com
 packages.cloud.google.com
 k8s.io
 *.k8s.io
+gcr.io
+*.gcr.io
