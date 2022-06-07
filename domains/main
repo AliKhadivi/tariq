@@ -1,3 +1,5 @@
+mcr.microsft.com
+api.nuget.org
 docker.com
 *.docker.com
 docker.io
@@ -25,8 +27,7 @@ storage.googleapis.com
 packages.cloud.google.com
 k8s.io
 *.k8s.io
-android.com
-*.android.com
+
 
 
 
