@@ -14,8 +14,8 @@ Tariq is yet another smart DNS solution to bypass geo-blocking.
 
 ```bash
 sudo git clone https://github.com/alikhadivi/tariq /opt/tariq
-sudo docker pull alikhadivi/tariq
 sudo ln -snf /opt/tariq/tariq /usr/local/bin/tariq
+sudo tariq pull
 ```
 
 ## Enable Cronjob
