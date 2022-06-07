@@ -10,6 +10,7 @@ Tariq is yet another smart DNS solution to bypass geo-blocking.
 * crontab
 * dig
 * iptables
+* Open ports: 53, 80, 443
 
 ## Installation
 
