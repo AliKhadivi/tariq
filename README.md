@@ -18,11 +18,6 @@ sudo ln -snf /opt/tariq/tariq /usr/local/bin/tariq
 sudo tariq pull
 ```
 
-## Enable Cronjob
-```bash
-sudo tariq cronjob
-```
-
 ## Usage
 
 Tariq needs to be installed on a server to the region you are interested.
@@ -34,11 +29,18 @@ After you start it, change the DNS of client to the IP of your server.
 sudo tariq start
 sudo tariq enable
 ```
+**Note:** Required to enable cronjob after install
 
 ### Check if it's running
 
 ```bash
 sudo tariq status
+```
+
+### Enable Cronjob
+Enable cronjob for auto reload ddns ips(Required):
+```bash
+sudo tariq cronjob
 ```
 
 ### Allow an IP to use your smart DNS
