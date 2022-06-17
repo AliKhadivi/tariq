@@ -89,7 +89,14 @@ sudo tariq reload-ddns
 
 ### Update Tariq
 ```bash
-tariq update
+sudo tariq update
+```
+OR
+```bash
+cd /otp/tariq
+sudo git pull
+sudo tariq pull
+sudo tariq restart
 ```
 
 ### Configuration
