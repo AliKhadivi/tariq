@@ -87,6 +87,11 @@ sudo tariq list-ddns
 sudo tariq reload-ddns
 ```
 
+### Update Tariq
+```bash
+tariq update
+```
+
 ### Configuration
 
 If you want to use OpenDNS servers instead Google DNS then do:
