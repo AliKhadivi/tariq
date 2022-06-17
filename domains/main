@@ -29,3 +29,5 @@ k8s.io
 *.k8s.io
 gcr.io
 *.gcr.io
+bintray.com
+*.bintray.com
