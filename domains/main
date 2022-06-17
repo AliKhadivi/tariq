@@ -31,3 +31,4 @@ gcr.io
 *.gcr.io
 bintray.com
 *.bintray.com
+repo.mongodb.org
