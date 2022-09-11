@@ -46,8 +46,8 @@ RUN apk update \
     && cp -rf ./apps/instl /usr/local/bin/ \
     && cp -rf ./nginx/* /etc/nginx/ \
     && touch /empty.pem \
-    && rm -f /etc/nginx/conf.d/default.conf \
-    && chown -R nobody:nogroup /server
+    && rm -f /etc/nginx/conf.d/default.conf
+    # \ && chown -R nobody:nogroup /server
 
 # ADD services.ini /etc/supervisor.d/
 # ADD instl /usr/local/bin/
