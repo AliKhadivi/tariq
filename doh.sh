@@ -11,7 +11,7 @@ if [ "$DEBUG" = "1" ]; then
     BASH_CMD_FLAGS='-x'
 fi
 
-DOH_CONFIG_SAMPLE_FILE=/server/doh-server.sample.conf
+DOH_CONFIG_TEMPLATE_FILE=/server/doh-server.template.conf
 DOH_CONFIG_FILE=/server/doh-server.conf
 
 printf "|---------------------------------------------------------------------------------------------\n";
@@ -31,7 +31,7 @@ done
 
 # lets generate config file by replacing all variables inside of it.
 TMP_FILE=/tmp/doh-server.conf
-cp ${DOH_CONFIG_SAMPLE_FILE} ${TMP_FILE}
+cp ${DOH_CONFIG_TEMPLATE_FILE} ${TMP_FILE}
 DOLLAR='$' envsubst < /tmp/doh-server.conf > ${DOH_CONFIG_FILE}
 rm ${TMP_FILE}
 

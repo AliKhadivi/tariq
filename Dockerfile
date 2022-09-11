@@ -48,7 +48,7 @@ RUN apk update \
     && cp -rf ./nginx-doh.conf /etc/nginx/http.templates.d/ \
     && touch /empty.pem \
     && rm -f /etc/nginx/conf.d/default.conf \
-    && cp ./doh.conf /server/doh-server.conf \
+    && cp ./doh-server.template.conf /server/doh-server.template.conf \
     && chown -R nobody:nogroup /server
 
 # ADD services.ini /etc/supervisor.d/
