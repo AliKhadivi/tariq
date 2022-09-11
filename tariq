@@ -8,6 +8,12 @@ config=(
     [dns]='8.8.8.8,8.8.4.4'
     [iptables]='true'
     [ipv6nat]='true'
+    [encrypt]='false'
+    [doh_port]='4443'
+    [domain]=''
+    [cert_path]=''
+    [key_path]=''
+    [dhparam_path]=''
 )
 
 usage() {
@@ -207,14 +213,18 @@ prepare_iptables() {
     iptables -w -A tariq-forward -o tariq0 -j tariq-filter
 
     # block our services for all IPs
+    iptables -w -A tariq-input ! -i lo -p tcp --dport "${config[doh_port]}" -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-input ! -i lo -p tcp --dport 443 -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-input ! -i lo -p tcp --dport 80 -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-input ! -i lo -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-input ! -i lo -p tcp --dport 853 -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-input ! -i lo -p udp --dport 53 -j REJECT --reject-with icmp-port-unreachable
 
+    iptables -w -A tariq-forward -o tariq0 -p tcp --dport "${config[doh_port]}" -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-forward -o tariq0 -p tcp --dport 443 -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-forward -o tariq0 -p tcp --dport 80 -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-forward -o tariq0 -p tcp --dport 53 -j REJECT --reject-with tcp-reset
+    iptables -w -A tariq-forward -o tariq0 -p tcp --dport 853 -j REJECT --reject-with tcp-reset
     iptables -w -A tariq-forward -o tariq0 -p udp --dport 53 -j REJECT --reject-with icmp-port-unreachable
 
     # unblock our services for the allowed IPs
@@ -239,13 +249,17 @@ prepare_ip6tables() {
     ip6tables -w -A tariq-forward -o tariq0 -j tariq-filter
 
     # block our services for all IPs
+    ip6tables -w -A tariq-input ! -i lo -p tcp --dport "${config[doh_port]}" -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-input ! -i lo -p tcp --dport 443 -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-input ! -i lo -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-input ! -i lo -p tcp --dport 853 -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-input ! -i lo -p tcp --dport 53 -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-input ! -i lo -p udp --dport 53 -j REJECT --reject-with icmp6-adm-prohibited
 
+    ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport "${config[doh_port]}" -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 443 -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 80 -j REJECT --reject-with tcp-reset
+    ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 853 -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-forward -o tariq0 -p tcp --dport 53 -j REJECT --reject-with tcp-reset
     ip6tables -w -A tariq-forward -o tariq0 -p udp --dport 53 -j REJECT --reject-with icmp6-adm-prohibited
 
@@ -286,13 +300,41 @@ start_container() {
         prepare_iptables
         prepare_ip6tables
     fi
+        # -e cert_path="${config[cert_path]}"
+        # -e key_path="${config[key_path]}"
+        # -e dhparam_path="${config[dhparam_path]}"
 
     is_container tariq && docker rm tariq
-    docker run -i --rm -p 53:53 -p 53:53/udp -p 80:80 -p 443:443 \
-        --cap-add=NET_ADMIN --name tariq \
-        --net=tariq-net \
-        -e DNS_SERVER="${config[dns]}" \
-        alikhadivi/tariq
+    if [ "$encrypt" = true ]
+    then
+        docker run -i --rm -p 53:53 \
+            -p 53:53/udp -p 80:80 \
+            -p 443:443 -p 853:853 \
+            -p "${config[doh_port]}:${config[doh_port]}" \
+            --cap-add=NET_ADMIN \
+            --name tariq \
+            --net=tariq-net \
+            -v "${config[cert_path]}:/ssl/cert.pem" \
+            -v "${config[key_path]}:/ssl/key.pem" \
+            -v "${config[dhparam_path]}:/ssl/dhparam.pem" \
+            -e domain="${config[domain]}" \
+            -e encrypt="${config[encrypt]}" \
+            -e DNS_SERVER="${config[dns]}" \
+            -e DOH_PORT="${config[doh_port]}" \
+            -e cert_path="/ssl/cert.pem" \
+            -e key_path="/ssl/key.pem" \
+            -e dhparam_path="/ssl/dhparam.pem" \
+            alikhadivi/tariq
+    else
+        docker run -i --rm -p 53:53 \
+            -p 53:53/udp -p 80:80 \
+            -p 443:443 \
+            --cap-add=NET_ADMIN \
+            --name tariq \
+            --net=tariq-net \
+            -e DNS_SERVER="${config[dns]}" \
+            alikhadivi/tariq
+    fi
 
     if is_true "${config[iptables]}"; then
         reset_iptables

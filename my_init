@@ -12,4 +12,8 @@ if ! is_privileged; then
     exit 1
 fi
 
+echo "| ---------------- |"
+echo "|  Tariq started!  |"
+echo "| ---------------- |"
+
 exec supervisord -c /etc/supervisord.conf -n
