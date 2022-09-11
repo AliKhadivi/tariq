@@ -40,9 +40,10 @@ COPY . .
 RUN apk update \
     && apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq bash gettext \
     && echo "\n stream { include /etc/nginx/streams/*; }" >> /etc/nginx/nginx.conf \
-    && cp ./services.ini /etc/supervisor.d/ \
-    && cp ./instl /usr/local/bin/ \
-    && cp ./stream.conf /etc/nginx/streams/ \
+    && mkdir -p /etc/nginx/streams/ \
+    && cp -rf ./services.ini /etc/supervisor.d/services.ini \
+    && cp -rf ./instl /usr/local/bin/ \
+    && cp -rf ./stream.conf /etc/nginx/streams/ \
     && touch /empty.pem \
     && rm -f /etc/nginx/conf.d/default.conf
 
