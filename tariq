@@ -565,10 +565,12 @@ list_ddns() {
 
     # get_allowed_ips
 }
-
+flush_dns(){
+    systemd-resolve --flush-caches >> /dev/nul
+}
 reload_ddns() {
     if [[ -f /etc/tariq/allowed_ddns ]]; then
-        systemd-resolve --flush-caches >> /dev/nul || true
+        flush_dns || true
         local x
         for x in $(cat /etc/tariq/allowed_ddns); do
             ip="$(cat /etc/tariq/ddns_ips/$x)"
