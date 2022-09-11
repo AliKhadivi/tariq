@@ -30,7 +30,7 @@ auto_envsubst() {
 if [ "$encrypt" = true ] ; then
     echo "Configuration Nginx..."
     auto_envsubst http.templates.d conf.d
-    auto_envsubst stream.templates.d conf.d
+    auto_envsubst stream.templates.d stream.d
     # Launch nginx
     echo "Starting nginx..."
     exec nginx -g 'daemon off;'
