@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 if [ "$encrypt" = true ] ; then
     # Launch nginx
     echo "Starting nginx..."
