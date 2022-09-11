@@ -18,7 +18,7 @@ RUN set -x ;\
     && cp doh-server/doh-server /dist/doh-server \
     && echo ${DOH_VERSION_LATEST} > /dist/doh-server.version
 
-FROM nginx:latest
+FROM nginx:alpine
 LABEL MAINTAINER khadiviali39@gmail.com
 
 ENV DOH_HTTP_PREFIX="/dns-query" \
