@@ -27,9 +27,9 @@ ENV DOH_HTTP_PREFIX="/dns-query" \
     DOH_PORT="4443" \
     DOH_SERVER_VERBOSE="false" \
     domain="example.com" \
-    cert_path="/empty.pem" \
-    key_path="/empty.pem" \
-    dhparam_path="/empty.pem" \
+    cert_path="" \
+    key_path="" \
+    dhparam_path="" \
     encrypt="false"
 
 WORKDIR /opt/tariq
@@ -46,7 +46,6 @@ RUN apk update \
     && cp -rf ./apps/services.ini /etc/supervisor.d/services.ini \
     && cp -rf ./apps/instl /usr/local/bin/ \
     && cp -rf ./nginx/* /etc/nginx/ \
-    && touch /empty.pem \
     && rm -f /etc/nginx/conf.d/default.conf
         # \ && chown -R nobody:nogroup /server
 
