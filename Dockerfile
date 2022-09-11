@@ -1,5 +1,5 @@
 # Author: Ali Khadivi <khadiviali39@gmail.com>
-FROM golang:1.17-alpine AS doh-build
+FROM golang:alpine AS doh-build
 LABEL MAINTAINER khadiviali39@gmail.com
 
 RUN apk add --no-cache git make jq curl
