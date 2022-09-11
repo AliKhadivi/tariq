@@ -47,11 +47,11 @@ RUN apk update \
     && cp -rf ./nginx/* /etc/nginx/ \
     && touch /empty.pem \
     && rm -f /etc/nginx/conf.d/default.conf \
-    && cp ./apps/doh-server.template.conf /server/doh-server.template.conf \
     && chown -R nobody:nogroup /server
 
 # ADD services.ini /etc/supervisor.d/
 # ADD instl /usr/local/bin/
+    # && cp ./apps/doh-server.template.conf /server/doh-server.template.conf \
 
 
 #ADD my_init /
