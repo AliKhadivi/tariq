@@ -55,4 +55,4 @@ RUN apk update \
 
 
 #ADD my_init /
-CMD ["/opt/tariq/apps.my_init"]
+CMD ["/opt/tariq/apps/my_init"]
