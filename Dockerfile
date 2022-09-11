@@ -39,7 +39,7 @@ COPY . .
 
 RUN apk update \
     && apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq bash gettext \
-    && echo "\n stream { include /etc/nginx/streams/*; }" >> /etc/nginx/nginx.conf \
+    && echo "stream { include /etc/nginx/streams/*; }" >> /etc/nginx/nginx.conf \
     && mkdir -p /etc/nginx/streams/ /etc/supervisor.d/ \
     && cp -rf ./services.ini /etc/supervisor.d/services.ini \
     && cp -rf ./instl /usr/local/bin/ \
