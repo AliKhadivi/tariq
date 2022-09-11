@@ -14,6 +14,7 @@ config=(
     [cert_path]=''
     [key_path]=''
     [dhparam_path]=''
+    [doh_verbose]='false'
 )
 
 usage() {
@@ -321,6 +322,7 @@ start_container() {
             -e encrypt="${config[encrypt]}" \
             -e DNS_SERVER="${config[dns]}" \
             -e DOH_PORT="${config[doh_port]}" \
+            -e DOH_SERVER_VERBOSE="${config[doh_verbose]}" \
             -e cert_path="/ssl/cert.pem" \
             -e key_path="/ssl/key.pem" \
             -e dhparam_path="/ssl/dhparam.pem" \
