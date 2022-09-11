@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Author: Ali Khadivi <khadiviali39@gmail.com>
 set -e
 
@@ -46,5 +46,5 @@ rm ${TMP_FILE}
 #     exec $@
 # fi
 
-/server/doh-server -conf /server/doh-server.conf
+exec /server/doh-server -conf /server/doh-server.conf
 
