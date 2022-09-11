@@ -305,7 +305,7 @@ start_container() {
         # -e dhparam_path="${config[dhparam_path]}"
 
     is_container tariq && docker rm tariq
-    if [ "$encrypt" = true ]
+    if [ "${config[encrypt]}" = true ]
     then
         docker run -i --rm -p 53:53 \
             -p 53:53/udp -p 80:80 \
