@@ -2,5 +2,5 @@
 if [ "$encrypt" = true ] ; then
     # Launch nginx
     echo "Starting nginx..."
-    nginx -g 'daemon off;'
+    exec nginx -g 'daemon off;'
 fi
