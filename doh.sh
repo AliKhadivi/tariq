@@ -35,13 +35,16 @@ cp ${DOH_CONFIG_SAMPLE_FILE} ${TMP_FILE}
 DOLLAR='$' envsubst < /tmp/doh-server.conf > ${DOH_CONFIG_FILE}
 rm ${TMP_FILE}
 
-# Check if app-config is present
-if [ -f /app-config ]; then
-    # We expect that app-config handles the launch of app command
-    echo "| ENTRYPOINT: Executing app-config..."
-    . /app-config "$@"
-else
-    # Let default CMD run if app-config is missing
-    echo "| ENTRYPOINT: app-config was not available, running given parameters or default CMD..."
-    exec $@
-fi
+# # Check if app-config is present
+# if [ -f /app-config ]; then
+#     # We expect that app-config handles the launch of app command
+#     echo "| ENTRYPOINT: Executing app-config..."
+#     . /app-config "$@"
+# else
+#     # Let default CMD run if app-config is missing
+#     echo "| ENTRYPOINT: app-config was not available, running given parameters or default CMD..."
+#     exec $@
+# fi
+
+/server/doh-server -conf /server/doh-server.conf
+

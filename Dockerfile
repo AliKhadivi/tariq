@@ -36,6 +36,7 @@ WORKDIR /opt/tariq
 COPY . .
 
 #  certbot certbot-nginx
+COPY --from=doh-build /dist /server
 
 RUN apk update \
     && apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq bash gettext \
@@ -46,7 +47,9 @@ RUN apk update \
     && cp -rf ./stream.conf /etc/nginx/stream.templates.d/ \
     && cp -rf ./nginx-doh.conf /etc/nginx/http.templates.d/ \
     && touch /empty.pem \
-    && rm -f /etc/nginx/conf.d/default.conf
+    && rm -f /etc/nginx/conf.d/default.conf \
+    && cp ./doh.conf /server/doh-server.conf \
+    && chown -R nobody:nogroup /server
 
 # ADD services.ini /etc/supervisor.d/
 # ADD instl /usr/local/bin/
