@@ -4,9 +4,9 @@ set -e
 ME=$(basename $0)
 
 auto_envsubst() {
-  local template_dir="/etc/nginx/$1"
-  local suffix=".conf"
-  local output_dir="/etc/nginx/$2"
+  template_dir="/etc/nginx/$1"
+  suffix=".conf"
+  output_dir="/etc/nginx/$2"
 
   local template defined_envs relative_path output_path subdir
   defined_envs=$(printf '${%s} ' $(env | cut -d= -f1))
@@ -21,7 +21,7 @@ auto_envsubst() {
     subdir=$(dirname "$relative_path")
     # create a subdirectory where the template file exists
     mkdir -p "$output_dir/$subdir"
-    echo >&3 "$ME: Running envsubst on $template to $output_path"
+    echo "$ME: Running envsubst on $template to $output_path"
     envsubst "$defined_envs" < "$template" > "$output_path"
   done
 }
