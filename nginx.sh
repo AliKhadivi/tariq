@@ -17,7 +17,8 @@ auto_envsubst() {
   fi
   find "$template_dir" -follow -type f -name "*$suffix" -print | while read -r template; do
     relative_path="${template#$template_dir/}"
-    output_path="$output_dir/${relative_path}${suffix}"
+    output_path="$output_dir/${relative_path}"
+    # output_path="$output_dir/${relative_path%$suffix}"
     subdir=$(dirname "$relative_path")
     # create a subdirectory where the template file exists
     mkdir -p "$output_dir/$subdir"
