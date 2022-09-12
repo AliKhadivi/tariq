@@ -7,7 +7,7 @@ typeset -A config
 config=(
     [dns]='8.8.8.8,8.8.4.4'
     [iptables]='true'
-    [ipv6nat]='true'
+    [ipv6nat]='false'
     [encrypt]='false'
     [doh_port]='4443'
     [domain]=''
@@ -45,7 +45,7 @@ usage() {
     echo "Config options:"
     echo "  dns <ip-list>           DNS servers (default: 8.8.8.8,8.8.4.4)"
     echo "  iptables <true|false>   Set iptables rules (default: true)"
-    echo "  ipv6nat <true|false>    Create IPv6 NAT (default: true)"
+    # echo "  ipv6nat <true|false>    Create IPv6 NAT (default: true)"
 }
 
 load_config() {
@@ -287,13 +287,13 @@ start_container() {
     # in general IPv6 NAT is not suggested but some VPS providers do not offer
     # configurable IPv6 address range, so we workaround this.
     local ipv6_masq=0
-    if is_true "${config[ipv6nat]}" && has_global_ipv6; then
-        local net_opts=(--ipv6)
-        # local net_opts=(--ipv6 --subnet=fd00::/64)
-        ip6tables -t nat -I POSTROUTING -s fd00::/64 ! -o tariq0 -j MASQUERADE
-        sysctl -qw net.ipv6.conf.all.forwarding=1
-        ipv6_masq=1
-    fi
+    # if is_true "${config[ipv6nat]}" && has_global_ipv6; then
+    #     local net_opts=(--ipv6)
+    #     # local net_opts=(--ipv6 --subnet=fd00::/64)
+    #     ip6tables -t nat -I POSTROUTING -s fd00::/64 ! -o tariq0 -j MASQUERADE
+    #     sysctl -qw net.ipv6.conf.all.forwarding=1
+    #     ipv6_masq=1
+    # fi
 
     noout docker network create "${net_opts[@]}" --opt com.docker.network.bridge.name=tariq0  --subnet="${config[subnet]}"  tariq-net
 
