@@ -30,10 +30,15 @@ After you start it, change the DNS of client to the IP of your server.
 ## Enable Encrypt
 ```bash
 sudo tariq config-set encrypt true
-sudo tariq config-set domain exmaple.com
-sudo tariq config-set cert_path /path/to/fullchain.pem
-sudo tariq config-set key_path /path/to/key.pem
-sudo tariq config-set dhparam_path /path/to/dhparam_path.pem
+```
+create `.env` file with below content and set your ssl path:
+```
+cert=/path/to/cert.pem
+key=/path/to/key.pem
+```
+After:
+```bash
+sudo docker compose up -d --build
 ```
 
 ### Start Tariq and enable it on boot
