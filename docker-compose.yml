@@ -1,6 +1,7 @@
 services:
   encrypt:
     container_name: tariq-encrypt
+    restart: always
     networks:
       tariq-net:
     build:
@@ -13,6 +14,7 @@ services:
       - ${key}:/ssl/key.pem
   doh:
     container_name: tariq-doh
+    restart: always
     # ports:
     #   - '8053:8053'
     environment:
