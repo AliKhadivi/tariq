@@ -27,7 +27,7 @@ sudo tariq pull
 Tariq needs to be installed on a server to the region you are interested.
 After you start it, change the DNS of client to the IP of your server.
 
-## Enable Encrypt
+## Enable With Encryption
 ```bash
 sudo tariq config-set encrypt true
 ```
@@ -38,6 +38,8 @@ key=/path/to/key.pem
 ```
 After:
 ```bash
+sudo tariq start
+sudo tariq enable
 sudo docker compose up -d --build
 ```
 
