@@ -18,7 +18,7 @@
 #     && cp doh-server/doh-server /dist/doh-server \
 #     && echo ${DOH_VERSION_LATEST} > /dist/doh-server.version
 
-FROM alpine:alpine
+FROM alpine:latest
 # FROM nginx:alpine
 LABEL MAINTAINER khadiviali39@gmail.com
 
