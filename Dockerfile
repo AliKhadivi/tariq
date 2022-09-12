@@ -18,7 +18,8 @@
 #     && cp doh-server/doh-server /dist/doh-server \
 #     && echo ${DOH_VERSION_LATEST} > /dist/doh-server.version
 
-FROM nginx:alpine
+FROM alpine:alpine
+# FROM nginx:alpine
 LABEL MAINTAINER khadiviali39@gmail.com
 
 ENV DOH_HTTP_PREFIX="/dns-query" \
@@ -41,13 +42,16 @@ COPY . .
 RUN apk update \
     && apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq bash gettext \
     && chmod +x ./apps/* \
-    && echo "stream { include /etc/nginx/stream.d/*; }" >> /etc/nginx/nginx.conf \
-    && mkdir -p /etc/nginx/stream.d/ /etc/nginx/stream.templates.d/ /etc/nginx/http.templates.d/ /etc/supervisor.d/ \
     && cp -rf ./apps/services.ini /etc/supervisor.d/services.ini \
-    && cp -rf ./apps/instl /usr/local/bin/ \
-    && cp -rf ./nginx/* /etc/nginx/ \
-    && rm -f /etc/nginx/conf.d/default.conf
+    && cp -rf ./apps/instl /usr/local/bin/
         # \ && chown -R nobody:nogroup /server
+
+    # && echo "stream { include /etc/nginx/stream.d/*; }" >> /etc/nginx/nginx.conf \
+    # && mkdir -p /etc/nginx/stream.d/ /etc/nginx/stream.templates.d/ /etc/nginx/http.templates.d/ /etc/supervisor.d/ \
+    # && cp -rf ./nginx/* /etc/nginx/ \
+    # && rm -f /etc/nginx/conf.d/default.conf \
+    # && cp -rf ./nginx/* /etc/nginx/ \
+    # && rm -f /etc/nginx/conf.d/default.conf
 
 # ADD services.ini /etc/supervisor.d/
 # ADD instl /usr/local/bin/

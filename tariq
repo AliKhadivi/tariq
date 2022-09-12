@@ -306,37 +306,37 @@ start_container() {
         # -e dhparam_path="${config[dhparam_path]}"
 
     is_container tariq && docker rm tariq
-    if [ "${config[encrypt]}" = true ]
-    then
-        docker run -i --rm -p 53:53 \
-            -p 53:53/udp -p 80:80 \
-            -p 443:443 -p 853:853 \
-            -p "${config[doh_port]}:${config[doh_port]}" \
-            --cap-add=NET_ADMIN \
-            --name tariq \
-            --net=tariq-net \
-            -v "${config[cert_path]}:/ssl/cert.pem" \
-            -v "${config[key_path]}:/ssl/key.pem" \
-            -v "${config[dhparam_path]}:/ssl/dhparam.pem" \
-            -e domain="${config[domain]}" \
-            -e encrypt="${config[encrypt]}" \
-            -e DNS_SERVER="${config[dns]}" \
-            -e DOH_PORT="${config[doh_port]}" \
-            -e DOH_SERVER_VERBOSE="${config[doh_verbose]}" \
-            -e cert_path="/ssl/cert.pem" \
-            -e key_path="/ssl/key.pem" \
-            -e dhparam_path="/ssl/dhparam.pem" \
-            alikhadivi/tariq
-    else
-        docker run -i --rm -p 53:53 \
-            -p 53:53/udp -p 80:80 \
-            -p 443:443 \
-            --cap-add=NET_ADMIN \
-            --name tariq \
-            --net=tariq-net \
-            -e DNS_SERVER="${config[dns]}" \
-            alikhadivi/tariq
-    fi
+    # if [ "${config[encrypt]}" = true ]
+    # then
+    #     docker run -i --rm -p 53:53 \
+    #         -p 53:53/udp -p 80:80 \
+    #         -p 443:443 -p 853:853 \
+    #         -p "${config[doh_port]}:${config[doh_port]}" \
+    #         --cap-add=NET_ADMIN \
+    #         --name tariq \
+    #         --net=tariq-net \
+    #         -v "${config[cert_path]}:/ssl/cert.pem" \
+    #         -v "${config[key_path]}:/ssl/key.pem" \
+    #         -v "${config[dhparam_path]}:/ssl/dhparam.pem" \
+    #         -e domain="${config[domain]}" \
+    #         -e encrypt="${config[encrypt]}" \
+    #         -e DNS_SERVER="${config[dns]}" \
+    #         -e DOH_PORT="${config[doh_port]}" \
+    #         -e DOH_SERVER_VERBOSE="${config[doh_verbose]}" \
+    #         -e cert_path="/ssl/cert.pem" \
+    #         -e key_path="/ssl/key.pem" \
+    #         -e dhparam_path="/ssl/dhparam.pem" \
+    #         alikhadivi/tariq
+    # else
+    docker run -i --rm -p 53:53 \
+        -p 53:53/udp -p 80:80 \
+        -p 443:443 \
+        --cap-add=NET_ADMIN \
+        --name tariq \
+        --net=tariq-net \
+        -e DNS_SERVER="${config[dns]}" \
+        alikhadivi/tariq
+    # fi
 
     if is_true "${config[iptables]}"; then
         reset_iptables

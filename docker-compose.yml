@@ -1,0 +1,12 @@
+services:
+  tariq-encrypt:
+    networks:
+      tariq-net: {}
+    build:
+      dockerfile: nginx.Dockerfile
+    volumes:
+      - /ssl/cert.pem:/ssl/cert.pem
+      - /ssl/key.pem:/ssl/key.pem
+
+networks:
+  tariq-net: {}
