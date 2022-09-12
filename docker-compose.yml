@@ -1,5 +1,6 @@
 services:
-  tariq-encrypt:
+  encrypt:
+    container_name: tariq-encrypt
     networks:
       tariq-net: {}
     build:
