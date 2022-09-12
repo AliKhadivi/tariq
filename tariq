@@ -295,10 +295,7 @@ start_container() {
         ipv6_masq=1
     fi
 
-    noout docker network create "${net_opts[@]}" \
-        --opt com.docker.network.bridge.name=tariq0 \
-        --subnet="${config[subnet]}" \ 
-        tariq-net
+    noout docker network create "${net_opts[@]}" --opt com.docker.network.bridge.name=tariq0  --subnet="${config[subnet]}"  tariq-net
 
     allow_ip "${config[subnet]}" && update_allowed_ips_file
     if is_true "${config[iptables]}"; then
