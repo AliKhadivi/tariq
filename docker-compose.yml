@@ -2,7 +2,7 @@ services:
   encrypt:
     container_name: tariq-encrypt
     networks:
-      tariq-net: {}
+      tariq-net:
     build:
       dockerfile: nginx.Dockerfile
     ports:
@@ -13,4 +13,5 @@ services:
       - /ssl/key.pem:/ssl/key.pem
 
 networks:
-  tariq-net: {}
+  tariq-net: 
+    external: true
