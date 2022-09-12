@@ -9,8 +9,8 @@ services:
       - 853:853
       - 4443:4443
     volumes:
-      - /ssl/cert.pem:/ssl/cert.pem
-      - /ssl/key.pem:/ssl/key.pem
+      - ${cert}:/ssl/cert.pem
+      - ${key}:/ssl/key.pem
 
 networks:
   tariq-net: 
