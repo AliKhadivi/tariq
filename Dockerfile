@@ -42,12 +42,13 @@ COPY . .
 RUN apk update \
     && apk add --no-cache supervisor bind-tools iptables sniproxy dnsmasq bash gettext \
     && chmod +x ./apps/* \
+    && mkdir -p /etc/supervisor.d/ \
     && cp -rf ./apps/services.ini /etc/supervisor.d/services.ini \
     && cp -rf ./apps/instl /usr/local/bin/
         # \ && chown -R nobody:nogroup /server
 
     # && echo "stream { include /etc/nginx/stream.d/*; }" >> /etc/nginx/nginx.conf \
-    # && mkdir -p /etc/nginx/stream.d/ /etc/nginx/stream.templates.d/ /etc/nginx/http.templates.d/ /etc/supervisor.d/ \
+    # && mkdir -p /etc/nginx/stream.d/ /etc/nginx/stream.templates.d/ /etc/nginx/http.templates.d/  \
     # && cp -rf ./nginx/* /etc/nginx/ \
     # && rm -f /etc/nginx/conf.d/default.conf \
     # && cp -rf ./nginx/* /etc/nginx/ \
