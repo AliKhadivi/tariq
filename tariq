@@ -15,6 +15,7 @@ config=(
     [key_path]=''
     [dhparam_path]=''
     [doh_verbose]='false'
+    [subnet]='172.28.28.0/24'
 )
 
 usage() {
@@ -287,7 +288,8 @@ start_container() {
     # configurable IPv6 address range, so we workaround this.
     local ipv6_masq=0
     if is_true "${config[ipv6nat]}" && has_global_ipv6; then
-        local net_opts=(--ipv6 --subnet=fd00::/64)
+        local net_opts=(--ipv6)
+        # local net_opts=(--ipv6 --subnet=fd00::/64)
         ip6tables -t nat -I POSTROUTING -s fd00::/64 ! -o tariq0 -j MASQUERADE
         sysctl -qw net.ipv6.conf.all.forwarding=1
         ipv6_masq=1
@@ -295,8 +297,9 @@ start_container() {
 
     noout docker network create "${net_opts[@]}" \
         --opt com.docker.network.bridge.name=tariq0 \
+        --subnet="${config[subnet]}" \ 
         tariq-net
-
+    allow_ip "${config[subnet]}" && update_allowed_ips_file
     if is_true "${config[iptables]}"; then
         prepare_iptables
         prepare_ip6tables
