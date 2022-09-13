@@ -23,9 +23,10 @@ java.com
 kubernetes.io
 *.kubernetes.io
 dl.google.com
+*.dl.google.com
 *.googleapis.com
 *.cloud.google.com
-CN=*.googlecode.com
+*.googlecode.com
 k8s.io
 *.k8s.io
 gcr.io
