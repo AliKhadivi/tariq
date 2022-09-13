@@ -23,8 +23,9 @@ java.com
 kubernetes.io
 *.kubernetes.io
 dl.google.com
-storage.googleapis.com
-packages.cloud.google.com
+*.googleapis.com
+*.cloud.google.com
+CN=*.googlecode.com
 k8s.io
 *.k8s.io
 gcr.io
@@ -34,5 +35,6 @@ bintray.com
 repo.mongodb.org
 vmware.com
 *.vmware.com
-
+*.pki.goog
+pki.goog
 
