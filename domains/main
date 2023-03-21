@@ -40,5 +40,8 @@ vmware.com
 *.pki.goog
 pki.goog
 packages.microsoft.com
-
+python.org
+*.python.org
+pypi.org
+*.pypi.org
 
