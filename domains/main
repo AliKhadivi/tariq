@@ -44,4 +44,6 @@ python.org
 *.python.org
 pypi.org
 *.pypi.org
+pythonhosted.org
+*.pythonhosted.org
 
