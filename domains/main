@@ -39,4 +39,6 @@ vmware.com
 *.vmware.com
 *.pki.goog
 pki.goog
+packages.microsoft.com
+
 
