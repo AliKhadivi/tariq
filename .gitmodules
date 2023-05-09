@@ -1,0 +1,3 @@
+[submodule "domains"]
+	path = domains
+	url = https://github.com/AliKhadivi/sanctioned-domains
