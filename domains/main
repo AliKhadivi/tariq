@@ -405,3 +405,14 @@ tanzu.io
 *.tanzu.io
 digicert.com
 *.digicert.com
+elastic.co
+*.elastic.co
+vidyard.com
+*.vidyard.com
+swiftype.com
+*.swiftype.com
+optimizely.com
+*.optimizely.com
+bugsnag.com
+*.bugsnag.com
+apis.google.com
