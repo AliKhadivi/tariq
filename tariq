@@ -11,6 +11,7 @@ config=(
     [encrypt]='false'
     [doh_port]='4443'
     [domain]=''
+    [ip]=''
     [cert_path]=''
     [key_path]=''
     [dhparam_path]=''
@@ -329,6 +330,17 @@ start_container() {
     #         -e dhparam_path="/ssl/dhparam.pem" \
     #         alikhadivi/tariq
     # else
+    EXT_IP="$(config_get)"
+    
+    # Check if the "ip" variable is empty or not
+    if [ -z "${aaa}" ]; then
+        #IP is empty
+        options=
+    else
+        options="-e"
+        EXT_IP="EXT_IP=${EXT_IP}"
+    fi
+
     docker run -i --rm -p 53:53 \
         -p 53:53/udp -p 80:80 \
         -p 443:443 \
@@ -336,6 +348,7 @@ start_container() {
         --name tariq \
         --net=tariq-net \
         -e DNS_SERVER="${config[dns]}" \
+        ${options:-} "${EXT_IP:-}" \
         alikhadivi/tariq
     # fi
     allow_ip "${config[subnet]}" && update_allowed_ips_file
