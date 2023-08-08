@@ -332,12 +332,11 @@ start_container() {
     EXT_IP="$(config_get 'ip')"
     
     # Check if the "ip" variable is empty or not
-    if [ -z "${aaa}" ]; then
+    if [ -z "${EXT_IP}" ]; then
         #IP is empty
         options=
     else
-        options="-e"
-        EXT_IP="EXT_IP=${EXT_IP}"
+        options="-e EXT_IP=${EXT_IP}"
     fi
 
     docker run -i --rm -p 53:53 \
@@ -347,7 +346,7 @@ start_container() {
         --name tariq \
         --net=tariq-net \
         -e DNS_SERVER="${config[dns]}" \
-        ${options:-} "${EXT_IP:-}" \
+        ${options:-} \
         alikhadivi/tariq
     # fi
     allow_ip "${config[subnet]}" && update_allowed_ips_file
