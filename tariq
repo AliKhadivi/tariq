@@ -639,6 +639,8 @@ update() {
         echo "Tariq already up to date :-)"
     else
         echo "$m"
+        git submodule init
+        git submodule update
         pull
         stop
         start

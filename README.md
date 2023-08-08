@@ -18,6 +18,9 @@ Tariq is yet another smart DNS solution to bypass geo-blocking.
 
 ```bash
 sudo git clone https://github.com/alikhadivi/tariq /opt/tariq
+cd /opt/tariq
+sudo git submodule init
+sudo git submodule update
 sudo ln -snf /opt/tariq/tariq /usr/bin/tariq
 sudo tariq pull
 ```
@@ -113,6 +116,7 @@ OR
 ```bash
 cd /otp/tariq
 sudo git pull
+sudo git submodule update
 sudo tariq pull
 sudo tariq restart
 ```
