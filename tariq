@@ -11,7 +11,6 @@ config=(
     [encrypt]='false'
     [doh_port]='4443'
     [domain]=''
-    [ip]=''
     [cert_path]=''
     [key_path]=''
     [dhparam_path]=''
@@ -330,7 +329,7 @@ start_container() {
     #         -e dhparam_path="/ssl/dhparam.pem" \
     #         alikhadivi/tariq
     # else
-    EXT_IP="$(config_get)"
+    EXT_IP="$(config_get 'ip')"
     
     # Check if the "ip" variable is empty or not
     if [ -z "${aaa}" ]; then
